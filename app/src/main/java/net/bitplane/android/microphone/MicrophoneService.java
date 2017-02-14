@@ -169,8 +169,13 @@ public class MicrophoneService extends Service implements OnSharedPreferenceChan
                 cancelIntent.setData(Uri.parse("microphone-service://null"));
                 cancelIntent.setFlags(cancelIntent.getFlags() | Notification.FLAG_AUTO_CANCEL);
                 PendingIntent pendingCancelIntent = PendingIntent.getService(context, 0, cancelIntent, 0);
-                Notification notification = new Notification(R.drawable.status, titleText, when);
-                notification.setLatestEventInfo(context, titleText, statusText, pendingCancelIntent);
+                Notification notification = new Notification.Builder(context)
+                        .setContentTitle(titleText)
+                        .setContentText(statusText)
+                        .setContentIntent(pendingCancelIntent)
+                        .setSmallIcon(R.drawable.status)
+                        .setWhen(when)
+                        .build();
                 mNotificationManager.notify(0, notification);
 
                 // allow the
