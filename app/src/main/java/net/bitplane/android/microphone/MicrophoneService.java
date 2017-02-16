@@ -33,6 +33,7 @@ public class MicrophoneService extends Service implements OnSharedPreferenceChan
     private int mOutBufferSize;
     SharedPreferences mSharedPreferences;
     private static boolean mActive = false;
+    private AudioManager mAudioManager;
     private NotificationManager mNotificationManager;
     private MicrophoneReceiver mBroadcastReceiver;
     private HeadsetStateReceiver mHeadsetStateReceiver;
@@ -78,6 +79,8 @@ public class MicrophoneService extends Service implements OnSharedPreferenceChan
     public void onCreate() {
 
         Log.d(APP_TAG, "Creating mic service");
+
+        mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
 
         // notification service
         mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
@@ -190,6 +193,14 @@ public class MicrophoneService extends Service implements OnSharedPreferenceChan
             }
 
             private void recordLoop() {
+                //save old mode
+                int oldMode=mAudioManager.getMode();
+                boolean oldIsSpeakerphoneON=mAudioManager.isSpeakerphoneOn();
+
+                //play with phone speaker
+                mAudioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
+                mAudioManager.setSpeakerphoneOn(true);
+
                 if (mAudioOutput.getState() != AudioTrack.STATE_INITIALIZED || mAudioInput.getState() != AudioTrack.STATE_INITIALIZED) {
                     Log.d(APP_TAG, "Can't start. Race condition?");
                 } else {
@@ -221,6 +232,9 @@ public class MicrophoneService extends Service implements OnSharedPreferenceChan
                                 bytes.rewind();
                                 mAudioOutput.write(b, 0, o);
                             }
+                            //restore old mode
+                            mAudioManager.setMode(oldMode);
+                            mAudioManager.setSpeakerphoneOn(oldIsSpeakerphoneON);
 
                             Log.d(APP_TAG, "Finished recording");
                         } catch (Exception e) {
@@ -244,6 +258,7 @@ public class MicrophoneService extends Service implements OnSharedPreferenceChan
                         Log.d(APP_TAG, "Error somewhere in record loop.");
                     }
                 }
+
                 // cancel notification and receiver
                 mNotificationManager.cancel(0);
                 try {
